@@ -4,6 +4,8 @@
 ### How to run:
 In terminal paste:
 ``` uvicorn backend.main:app --reload```
+To run tests paste:
+```pytest```
 
 ### Frontend:
 - sends JSON requests and displays results

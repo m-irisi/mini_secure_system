@@ -8,7 +8,6 @@ def setup_function():
     """
     store.clear()
 
-
 def test_set_and_commit():
     tm = TransactionManager(store)
 

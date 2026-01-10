@@ -1,43 +1,46 @@
+import asyncio
+
 store = {}
+store_lock = asyncio.Lock()
+
 
 class TransactionManager:
-    def __init__(self, store: dict):
-        # Reference to the real store
-        self._store = store
+    def __init__(self, store_ref: dict, lock: asyncio.Lock):
+        self.store = store_ref
+        self.lock = lock
 
-        # Private copy used for staging changes
-        self._working_copy = store.copy()
-
-        # Track whether the transaction is still valid
-        self._active = True
+        # Snapshot of store at transaction start
+        self.working_copy = store_ref.copy()
+        self.active = True
 
     def _ensure_active(self):
-        if not self._active:
+        if not self.active:
             raise RuntimeError("Transaction is no longer active")
 
     def set(self, key: str, value: str = "exists"):
         self._ensure_active()
-        if key in self._working_copy:
+        if key in self.working_copy:
             raise ValueError("Key already exists")
-        self._working_copy[key] = value
+        self.working_copy[key] = value
 
     def get(self, key: str):
         self._ensure_active()
-        if key not in self._working_copy:
+        if key not in self.working_copy:
             raise ValueError("Key does not exist")
-        return self._working_copy[key]
+        return self.working_copy[key]
 
     def delete(self, key: str):
         self._ensure_active()
-        if key not in self._working_copy:
+        if key not in self.working_copy:
             raise ValueError("Key does not exist")
-        del self._working_copy[key]
+        del self.working_copy[key]
 
-    def commit(self):
+    async def commit(self):
         self._ensure_active()
-        self._store.clear()
-        self._store.update(self._working_copy)
-        self._active = False
+        async with self.lock:
+            self.store.clear()
+            self.store.update(self.working_copy)
+        self.active = False
 
     def rollback(self):
-        self._active = False
+        self.active = False

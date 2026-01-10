@@ -38,6 +38,7 @@ class TransactionManager:
     async def commit(self):
         self._ensure_active()
         async with self.lock:
+            await asyncio.sleep(0.1)  # simulate slow commit
             self.store.clear()
             self.store.update(self.working_copy)
         self.active = False

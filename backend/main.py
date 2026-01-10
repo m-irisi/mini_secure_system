@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
+from typing import List
 from backend.schemas import TransactionRequest
-from backend.store import store
+from backend.store import TransactionManager, store
 
 app = FastAPI()
 
@@ -40,3 +41,38 @@ def transaction(request: TransactionRequest):
         "operation": request.operation,
         "key": request.key
     }
+
+@app.post("/batch")
+def batch(operations: List[TransactionRequest] = Body(...)):
+    tm = TransactionManager(store)
+
+    try:
+        results = []
+        for op in operations:
+            if op.operation == 'set':
+                tm.set(op.key)
+                results.append({
+                    "operation": op.operation,
+                    "key": op.key,
+                    "value": tm.get(op.key)
+                })
+            elif op.operation == 'get':
+                value = tm.get(op.key)
+                results.append({
+                    "operation": op.operation,
+                    "key": op.key,
+                    "value": value
+                })
+            elif op.operation == 'delete':
+                tm.delete(op.key)
+                results.append({
+                    "operation": op.operation,
+                    "key": op.key,
+                    "value": None  # key no longer exists
+                })
+        tm.commit()
+        return results
+    except ValueError as e:
+        tm.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+

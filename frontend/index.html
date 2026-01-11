@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Transaction Graph Viewer</title>
+</head>
+<body>
+  <h1>Transaction Graph</h1>
+  <pre id="graph">Loading...</pre>
+
+  <script>
+    async function loadGraph() {
+      const response = await fetch("http://127.0.0.1:8000/graph");
+      const data = await response.json();
+      document.getElementById("graph").textContent =
+        JSON.stringify(data, null, 2);
+    }
+
+    loadGraph();
+  </script>
+</body>
+</html>
